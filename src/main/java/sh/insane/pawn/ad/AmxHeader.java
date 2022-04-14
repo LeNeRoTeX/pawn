@@ -2,9 +2,11 @@ package sh.insane.pawn.ad;
 
 import lombok.Builder;
 import lombok.Getter;
+import lombok.ToString;
 
 @Builder
 @Getter
+@ToString
 public class AmxHeader {
     private int size;
     private short magic;

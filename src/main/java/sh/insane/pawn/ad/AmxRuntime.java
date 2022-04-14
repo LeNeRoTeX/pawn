@@ -2,6 +2,7 @@ package sh.insane.pawn.ad;
 
 import lombok.Getter;
 import lombok.SneakyThrows;
+import lombok.extern.log4j.Log4j2;
 import sh.insane.pawn.Header;
 import sh.insane.pawn.NativeTableEntry;
 import sh.insane.pawn.PublicTableEntry;
@@ -11,15 +12,19 @@ import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.List;
 
+@Log4j2
 public class AmxRuntime {
+    public static final int CELL_SIZE = 4;
+
     private static final int PUBLIC_TABLE_OFFSET = 56;
     private static final int NATIVE_TABLE_OFFSET = 60;
 
     @Getter
     private final AmxHeader amxHeader;
-    private final byte[] fileContent;
+    private byte[] fileContent;
 
     private int pri;
     private int alt;
@@ -33,9 +38,31 @@ public class AmxRuntime {
 
     @SneakyThrows
     public AmxRuntime(String path) {
-        fileContent = Files.readAllBytes(Paths.get(this.getClass().getClassLoader().getResource(path).toURI()));
+        fileContent = Files.readAllBytes(Paths.get("E:\\Users\\Lukas\\Desktop\\samp03x\\pawno\\timertest.amx"));
 
         amxHeader = readAmxHeader();
+
+        log.info("initial runtime size is {}", fileContent.length);
+
+        log.info("Flags {} {}", amxHeader.getFlags(), getBit((byte)amxHeader.getFlags(), 2));
+
+        byte[] b = new byte[amxHeader.getStp()];
+        System.arraycopy(fileContent, 0, b, 0, fileContent.length);
+
+        fileContent = b;
+
+        byte[] b2 = new byte[amxHeader.getStp()];
+
+        log.info("expanding runtime size to stp {}", amxHeader.getStp());
+    }
+
+    public byte getBit(byte input, int position)
+    {
+        return (byte) ((input >> position) & 1);
+    }
+
+    private boolean isContinuation(byte value) {
+        return getBit(value, 8) == 1;
     }
 
     public void executeMain() {
@@ -45,13 +72,55 @@ public class AmxRuntime {
 
         hea = getAmxHeader().getHea();
         stp = getAmxHeader().getStp();
-        cip = getAmxHeader().getCip() + amxHeader.getCod();
+        cip = getAmxHeader().getCip();
 
         stk = stp;
 
-        System.out.println("C " + cip);
+        verboseExecute2(cip);
+    }
 
-        execute(cip);
+    private void verboseExecute(int fromCip) {
+        cip = fromCip;
+
+        while(true) {
+            OpCode opCode = readInstruction(cip);
+
+            if(opCode == null) {
+                break;
+            }
+
+            if(opCode.operandSize > 0) {
+                int operand = readInt(amxHeader.getCod() + cip + 4);
+                log.info("[{}] [{}] ({})", opCode.instruction, opCode.name(), Integer.toHexString(operand));
+            } else log.info("[{}] [{}]", opCode.instruction, opCode.name());
+
+            if(opCode.equals(OpCode.CONST_PRI)) {
+                break;
+            }
+
+            advanceToNextInstruction(opCode);
+        }
+    }
+
+    private void verboseExecute2(int fromCip) {
+        log.info(amxHeader);
+
+        cip = fromCip;
+
+        while(true && cip + amxHeader.getCod() < amxHeader.getDat()) {
+            OpCode opCode = readInstruction(cip);
+
+            if(opCode == null) {
+                break;
+            }
+
+            if(opCode.operandSize > 0) {
+                int operand = readInt(amxHeader.getCod() + cip + 4);
+                log.info("[{}] [{}] ({}) (({}))", opCode.instruction, opCode.name(), Integer.toHexString(operand), readString(amxHeader.getDat() + operand));
+            } else log.info("[{}] [{}]", opCode.instruction, opCode.name());
+
+            advanceToNextInstruction(opCode);
+        }
     }
 
     private void writeDat(int address, int value) {
@@ -60,76 +129,126 @@ public class AmxRuntime {
 
     private int nextAndGet() {
         cip += 4;
-        int value = readInt(cip);
+        int value = readInt(cip + amxHeader.getCod());
         return value;
+    }
+
+    private OpCode readInstruction(int fromCip) {
+        int instruction = readByte(amxHeader.getCod() + fromCip) & 0XFF;
+
+        OpCode opCode = OpCode.getFromInstruction(instruction);
+
+        if(opCode == null) {
+            log.fatal("Could not get opcode from cip {} for instruction {}", cip, instruction);
+        }
+
+        return opCode;
+    }
+
+    private OpCode readInstruction2(int fromCip) {
+        byte instruction = readByte(amxHeader.getCod() + fromCip);
+
+        int count = 0;
+
+        while(isContinuation(instruction)) {
+            BitSet b = new BitSet();
+            b.set(0, getBit(instruction, 0));
+            b.set(1, getBit(instruction, 1));
+            b.set(2, getBit(instruction, 2));
+            b.set(3, getBit(instruction, 3));
+            b.set(4, getBit(instruction, 4));
+            b.set(5, getBit(instruction, 5));
+            b.set(6, getBit(instruction, 6));
+
+            count++;
+
+            instruction = readByte(amxHeader.getCod() + fromCip + count);
+        }
+
+        OpCode opCode = OpCode.getFromInstruction(instruction);
+
+        if(opCode == null) {
+            log.fatal("Could not get opcode from cip {} for instruction {}", cip, instruction);
+        }
+
+        return opCode;
+    }
+
+    private int readOperand(int fromCip) {
+        ByteBuffer b = ByteBuffer.allocate(8);
+
+        b.put(readByte(amxHeader.getCod() + fromCip + 4));
+        b.put(readByte(amxHeader.getCod() + fromCip + 5));
+        b.put(readByte(amxHeader.getCod() + fromCip + 6));
+        b.put(readByte(amxHeader.getCod() + fromCip + 7));
+
+        return b.asIntBuffer().get();
+    }
+
+    private void advanceToNextInstruction(OpCode current) {
+        int bytesToMove = current.operandSize;
+        bytesToMove += 4;
+        cip += bytesToMove;
     }
 
     private void execute(int offset) {
         cip = offset;
 
+        //TODO: next() durch advanceToNextInstruction ersetzen
+
         while(true) {
-            int opcode = readByte(cip);
+            OpCode opCode = readInstruction(cip);
 
-            System.out.println("OP: " + opcode + ", " + cip);
+            log.info("current instruction is [{}]", opCode.name());
 
-            if(opcode == 524292) {
-                return;
-            }
-
-            /* STK = STK - cell size, [STK] = FRM, FRM = STK */
-
-            switch(opcode) {
-                case 11: {
+            switch(opCode) {
+                case CONST_PRI: {
                     //CONST.pri
                     int value = nextAndGet();
                     pri = value;
-                    next();
                 }
-                case 14: {
+                case ADDR_ALT: {
                     //14 	ADDR.alt 	offset 	ALT = FRM + offset
                     int value = nextAndGet();
                     alt = frm + value;
                 }
-                case 23: {
+                case STOR_I: {
                     //23 	STOR.I 		[ALT] = PRI (full cell)
                     writeInt(alt, pri);
-                    next();
                 }
-                case 37: {
+                case PUSH_ALT: {
                     //37 	PUSH.alt 		STK = STK - cell size, [STK] = ALT
                     stk = stk - 4;
                     writeInt(stk, alt);
-                    next();
                 }
-                case 39: {
+                case PUSH_C: {
                     //PUSH.C 	value 	STK = STK - cell size, [STK] = value
                     int value = nextAndGet();
+
+                    log.info("Value fetched is {}", value);
+
                     stk = stk - 4;
                     writeInt(readInt(stk), value);
-                    next();
                 }
-                case 44: {
+                case STACK: {
                     //44 	STACK 	value 	ALT = STK, STK = STK + value
                     alt = stk;
                     int value = nextAndGet();
                     stk = stk + value;
-                    next();
                 }
-                case 45: {
+                case HEAP: {
                     //45 	HEAP 	value 	ALT = HEA, HEA = HEA + value
                     alt = hea;
                     int value = nextAndGet();
                     hea = hea + value;
-                    next();
                 }
-                case 46: {
+                case PROC: {
                     //PROC
                     stk = stk - 4;
                     writeInt(stk, frm);
                     frm = stk;
-                    next();
                 }
-                case 48: {
+                case RETN: {
                     //48 	RETN 		FRM = [STK], STK = STK + cell size, CIP = [STK],
                     // STK = STK + cell size, STK = STK + [STK] + cell size
                     int value = readInt(amxHeader.getDat() + stk);
@@ -138,14 +257,12 @@ public class AmxRuntime {
                     cip = readInt(amxHeader.getDat() + stk);
                     stk = stk + 4;
                     stk = stk + readInt(amxHeader.getDat() + stk) + 4;
-                    next();
                 }
-                case 89: {
+                case ZERO_PRI: {
                     //ZERO.pri
                     pri = 0;
-                    next();
                 }
-                case 119: {
+                case FILL: {
                     //119 	FILL 	number 	fill 'number' bytes of memory from [ALT]
                     // with value in PRI (number must be multiple of cell size)
 
@@ -156,32 +273,29 @@ public class AmxRuntime {
                     for(int i = 0; i < value; i++) {
                         ByteBuffer.wrap(fileContent).order(ByteOrder.LITTLE_ENDIAN).putInt(amxHeader.getDat() + i * 4, altOff);
                     }
-
-                    next();
                 }
-                case 120: {
+                case HALT: {
                     //HALT
-                    next();
                     System.out.println("HALT");
                     return;
                 }
-                case 123: {
+                case SYSREQ_C: {
                     //123 	SYSREQ.C 	value 	call system service
                     int value = nextAndGet();
                     System.out.println("SYSREQ.C call");
-                    next();
                 }
-                case 133: {
+                case PUSH_ADDR: {
                    //133 	PUSH.ADR 	offset 	STK = STK - cell size, [STK] = FRM + offset
                     stk = stk - 4;
                     int value = nextAndGet();
                     writeInt(stk, frm + value);
                 }
-                case 137: {
+                case BREAK: {
                     //BREAK
-                    next();
                 }
             }
+
+            advanceToNextInstruction(opCode);
         }
     }
 
@@ -253,7 +367,6 @@ public class AmxRuntime {
     }
 
     public int readInt(int offset) {
-        System.out.println("READ " + offset);
         return ByteBuffer.wrap(fileContent, offset, 4).order(ByteOrder.LITTLE_ENDIAN).asIntBuffer().get();
     }
 
@@ -262,7 +375,6 @@ public class AmxRuntime {
     }
 
     public void writeInt(int offset, int value) {
-        System.out.println("WRITE " + offset);
         ByteBuffer.wrap(fileContent).order(ByteOrder.LITTLE_ENDIAN).putInt(offset, value);
     }
 
@@ -270,16 +382,22 @@ public class AmxRuntime {
         String result = "";
 
         while(true) {
+            if(offset < 0 || offset >= fileContent.length) {
+                break;
+            }
+
             byte b = readByte(offset);
 
             if(b != 0) {
-                offset += 1;
+                offset += 4;
 
                 result = result + (char)b;
             } else {
                 break;
             }
         }
+
+        result = result.replace("\n", "\\n");
 
         return result;
     }
