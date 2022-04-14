@@ -129,6 +129,32 @@ public class AmxRuntime {
         }
     }
 
+    private void exec(int fromCip) {
+        cip = fromCip;
+
+        while(true && cip + amxHeader.getCod() < amxHeader.getDat()) {
+            OpCode opCode = readInstruction(cip);
+
+            if(opCode == null) {
+                break;
+            }
+
+            if(opCode.operandSize > 0) {
+                int operand = readInt(amxHeader.getCod() + cip + 4);
+                log.info("[{}] [{}] ({}) (({}))", opCode.instruction, opCode.name(), Integer.toHexString(operand), readString(amxHeader.getDat() + operand));
+            } else log.info("[{}] [{}]", opCode.instruction, opCode.name());
+
+            switch(opCode) {
+                case PROC: {
+                    
+                    break;
+                }
+            }
+
+            advanceToNextInstruction(opCode);
+        }
+    }
+
     private void writeDat(int address, int value) {
         writeInt(readInt(getAmxHeader().getDat() + address), value);
     }
