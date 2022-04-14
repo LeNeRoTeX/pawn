@@ -51,9 +51,15 @@ public class AmxRuntime {
 
         fileContent = b;
 
-        byte[] b2 = new byte[amxHeader.getStp()];
-
         log.info("expanding runtime size to stp {}", amxHeader.getStp());
+
+        for(PublicTableEntry entry : getPublicTable()) {
+            log.info(entry);
+        }
+
+        for(NativeTableEntry entry : getNativeTable()) {
+            log.info(entry);
+        }
     }
 
     public byte getBit(byte input, int position)
@@ -143,46 +149,6 @@ public class AmxRuntime {
         }
 
         return opCode;
-    }
-
-    private OpCode readInstruction2(int fromCip) {
-        byte instruction = readByte(amxHeader.getCod() + fromCip);
-
-        int count = 0;
-
-        while(isContinuation(instruction)) {
-            BitSet b = new BitSet();
-            b.set(0, getBit(instruction, 0));
-            b.set(1, getBit(instruction, 1));
-            b.set(2, getBit(instruction, 2));
-            b.set(3, getBit(instruction, 3));
-            b.set(4, getBit(instruction, 4));
-            b.set(5, getBit(instruction, 5));
-            b.set(6, getBit(instruction, 6));
-
-            count++;
-
-            instruction = readByte(amxHeader.getCod() + fromCip + count);
-        }
-
-        OpCode opCode = OpCode.getFromInstruction(instruction);
-
-        if(opCode == null) {
-            log.fatal("Could not get opcode from cip {} for instruction {}", cip, instruction);
-        }
-
-        return opCode;
-    }
-
-    private int readOperand(int fromCip) {
-        ByteBuffer b = ByteBuffer.allocate(8);
-
-        b.put(readByte(amxHeader.getCod() + fromCip + 4));
-        b.put(readByte(amxHeader.getCod() + fromCip + 5));
-        b.put(readByte(amxHeader.getCod() + fromCip + 6));
-        b.put(readByte(amxHeader.getCod() + fromCip + 7));
-
-        return b.asIntBuffer().get();
     }
 
     private void advanceToNextInstruction(OpCode current) {
@@ -342,7 +308,7 @@ public class AmxRuntime {
             int address = readInt(PUBLIC_TABLE_OFFSET + (i * 8));
             int nameAddress = readInt(PUBLIC_TABLE_OFFSET + 4 + (i * 8));
 
-            recordEntries.add(new PublicTableEntry(i, address, readString(nameAddress)));
+            recordEntries.add(new PublicTableEntry(i, address, readAnsiString(nameAddress)));
         }
 
         return recordEntries;
@@ -356,7 +322,7 @@ public class AmxRuntime {
         for(int i = getPublicCount(); i < nativeCount; i++) { //TODO: seems to work, but is definitely not the intended way
             int nameAddress = readInt(NATIVE_TABLE_OFFSET + (i * 8));
 
-            recordEntries.add(new NativeTableEntry(i - getPublicCount(), readString(nameAddress)));
+            recordEntries.add(new NativeTableEntry(i - getPublicCount(), readAnsiString(nameAddress)));
         }
 
         return recordEntries;
@@ -376,6 +342,30 @@ public class AmxRuntime {
 
     public void writeInt(int offset, int value) {
         ByteBuffer.wrap(fileContent).order(ByteOrder.LITTLE_ENDIAN).putInt(offset, value);
+    }
+
+    public String readAnsiString(int offset) {
+        String result = "";
+
+        while(true) {
+            if(offset < 0 || offset >= fileContent.length) {
+                break;
+            }
+
+            byte b = readByte(offset);
+
+            if(b != 0) {
+                offset += 1;
+
+                result = result + (char)b;
+            } else {
+                break;
+            }
+        }
+
+        result = result.replace("\n", "\\n");
+
+        return result;
     }
 
     public String readString(int offset) {
