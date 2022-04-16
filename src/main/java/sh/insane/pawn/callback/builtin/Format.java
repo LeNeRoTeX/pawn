@@ -21,6 +21,7 @@ public class Format implements NativeCallback {
         if(result.length() > size - 1) {
             result = result.substring(0, size - 1);
         }
+
         for(int i = 0; i < size; i++) {
 
             int toPut = 0;
@@ -34,10 +35,7 @@ public class Format implements NativeCallback {
 
         executionContext.writeInt(targetAddress + 4 * size, 0);
 
-        log.info("Val: " + result);
-        log.info("Val2: " + executionContext.readString(targetAddress));
-
-        log.info("Format called {} {} {}", targetAddress, size, text);
+        log.info("Format called {} {} '{}' -> {}'", targetAddress, size, text, executionContext.readString(targetAddress));
         return 0;
     }
 }

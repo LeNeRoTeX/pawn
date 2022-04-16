@@ -6,7 +6,7 @@ import sh.insane.pawn.extension.Plugin;
 public class BuiltInRuntimePlugin implements Plugin {
 
     @Override
-    public void onLoad(AmxContext amxContext) {
+    public void onPluginLoad(AmxContext amxContext) {
         amxContext.addNative("AddPlayerClass", new AddPlayerClass());
         amxContext.addNative("GetTickCount", new GetTickCount());
         amxContext.addNative("print", new Print());

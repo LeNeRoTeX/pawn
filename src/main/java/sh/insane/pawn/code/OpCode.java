@@ -1,4 +1,4 @@
-package sh.insane.pawn;
+package sh.insane.pawn.code;
 
 public enum OpCode {
     CONST_PRI(11, 4),

@@ -8,6 +8,8 @@ import lombok.ToString;
 @Getter
 @ToString
 public class AmxHeader {
+    public static final short MAGIC_32 = (short)0xF1E0;
+
     private int size;
     private short magic;
     private byte fileVersion;

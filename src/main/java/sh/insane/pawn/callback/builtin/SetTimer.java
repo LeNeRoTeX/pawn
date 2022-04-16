@@ -12,10 +12,10 @@ public class SetTimer implements NativeCallback {
     @Override
     public int call(ExecutionContext executionContext, List<Integer> callArguments) {
         String timerName = executionContext.readString(callArguments.get(0));
-        int intervall = callArguments.get(1);
+        int interval = callArguments.get(1);
         int repeating = callArguments.get(2);
 
-        log.info("SetTimer called '{}' '{}' '{}'", timerName, intervall, repeating);
+        log.info("SetTimer called '{}' '{}' '{}'", timerName, interval, repeating);
         return 0;
     }
 }

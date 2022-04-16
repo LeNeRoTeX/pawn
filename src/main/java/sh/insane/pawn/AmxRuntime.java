@@ -5,6 +5,11 @@ import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import sh.insane.pawn.callback.builtin.*;
 import sh.insane.pawn.callback.NativeCallback;
+import sh.insane.pawn.code.NativeTableEntry;
+import sh.insane.pawn.code.OpCode;
+import sh.insane.pawn.code.PublicTableEntry;
+import sh.insane.pawn.extension.AmxContext;
+import sh.insane.pawn.extension.Plugin;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -65,6 +70,10 @@ public class AmxRuntime {
         registerNative("GetTickCount", new GetTickCount());
         registerNative("format", new Format());
         registerNative("SendClientMessageToAll", new SendClientMessageToAll());
+
+        Plugin p = new BuiltInRuntimePlugin();
+
+        p.onPluginLoad(new AmxContext());
     }
 
     private void registerNative(String nativeName, NativeCallback nativeCallback) {

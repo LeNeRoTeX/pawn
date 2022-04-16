@@ -9,24 +9,11 @@ public class TestService {
 
     @PostConstruct
     public void postConstruct() throws Exception {
-        System.out.println("post construct");
-
-        /*AmxFile amxFile = new AmxFile("timertest.amx");
-
-        System.out.println("Version: " + amxFile.getHeader().getAmxVersion());
-
-        for(PublicTableEntry publicTableEntry : amxFile.getPublicTable()) {
-            System.out.println(publicTableEntry);
-        }
-
-        for(NativeTableEntry nativeTableEntry : amxFile.getNativeTable()) {
-            System.out.println(nativeTableEntry);
-        }*/
-
-        AmxRuntime amxRuntime = new AmxRuntime("timertest.amx");
-
+        //AmxRuntime amxRuntime = new AmxRuntime("timertest.amx");
         //amxRuntime.executeMain();
+        //amxRuntime.executePublic(0);
 
-        amxRuntime.executePublic(1);
+        Amx amx = new Amx();
+        amx.loadFromFile("/Users/lukas/Desktop/timertest.amx");
     }
 }

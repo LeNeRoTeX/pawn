@@ -1,14 +1,13 @@
-package sh.insane.pawn;
+package sh.insane.pawn.code;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.ToString;
 
-@Getter
 @AllArgsConstructor
+@Getter
 @ToString
-public class PublicTableEntry {
+public class NativeTableEntry {
     private int id;
-    private int address;
     private String name;
 }
