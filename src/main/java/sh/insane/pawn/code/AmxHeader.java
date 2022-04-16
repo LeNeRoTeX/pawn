@@ -1,4 +1,4 @@
-package sh.insane.pawn;
+package sh.insane.pawn.code;
 
 import lombok.Builder;
 import lombok.Getter;
@@ -9,6 +9,9 @@ import lombok.ToString;
 @ToString
 public class AmxHeader {
     public static final short MAGIC_32 = (short)0xF1E0;
+
+    public static final int PUBLIC_TABLE_OFFSET = 56;
+    public static final int NATIVE_TABLE_OFFSET = 60;
 
     private int size;
     private short magic;

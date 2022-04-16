@@ -1,6 +1,7 @@
 package sh.insane.pawn;
 
 import lombok.AllArgsConstructor;
+import sh.insane.pawn.code.AmxHeader;
 
 import java.util.function.BiConsumer;
 import java.util.function.Function;

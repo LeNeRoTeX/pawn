@@ -36,6 +36,8 @@ public class Amx {
             }
 
             scripts.add(script);
+
+            script.executeMain();
         } catch (IOException e) {
             log.error("could not load script from file {}", e.getMessage());
             return AmxError.AMX_ERR_FILE;

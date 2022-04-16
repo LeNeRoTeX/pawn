@@ -5,6 +5,7 @@ import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import sh.insane.pawn.callback.builtin.*;
 import sh.insane.pawn.callback.NativeCallback;
+import sh.insane.pawn.code.AmxHeader;
 import sh.insane.pawn.code.NativeTableEntry;
 import sh.insane.pawn.code.OpCode;
 import sh.insane.pawn.code.PublicTableEntry;

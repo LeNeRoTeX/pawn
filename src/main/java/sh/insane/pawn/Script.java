@@ -1,19 +1,32 @@
 package sh.insane.pawn;
 
 import lombok.extern.log4j.Log4j2;
+import sh.insane.pawn.code.AmxHeader;
+import sh.insane.pawn.code.NativeTableEntry;
+import sh.insane.pawn.code.PublicTableEntry;
 
 import java.time.LocalDateTime;
+import java.util.*;
 
 @Log4j2
 public class Script {
     private final String fileLocation;
     private final LocalDateTime loadTime;
     private final AmxHeader amxHeader;
+    private final byte[] scriptCode;
 
     public Script(String fileLocation, byte[] scriptCode) {
         this.fileLocation = fileLocation;
         loadTime = LocalDateTime.now();
         amxHeader = readAmxHeader(scriptCode);
+
+        this.scriptCode = prepareAndExpand(scriptCode);
+    }
+
+    private byte[] prepareAndExpand(byte[] bytes) {
+        byte[] expandedBytes = new byte[getAmxHeader().getStp()];
+        System.arraycopy(bytes, 0, expandedBytes, 0, expandedBytes.length);
+        return expandedBytes;
     }
 
     public String getFileLocation() {
@@ -60,5 +73,50 @@ public class Script {
         }
 
         return AmxError.AMX_ERR_NONE;
+    }
+
+    public void executeMain() {
+        if(!getAmxHeader().hasMainFunction()) {
+            return;
+        }
+
+        //TODO
+    }
+
+    private int getPublicCount() {
+        return (getAmxHeader().getNatives() - getAmxHeader().getPublics()) / getAmxHeader().getDefSize();
+    }
+
+    private int getNativeCount() {
+        return (getAmxHeader().getLibraries() - getAmxHeader().getNatives()) / getAmxHeader().getDefSize();
+    }
+
+    public Set<PublicTableEntry> getPublics() {
+        Set<PublicTableEntry> recordEntries = new HashSet<>();
+
+        int publicCount = getPublicCount();
+
+        for(int i = 0; i < publicCount; i++) {
+            int address = ByteUtils.readInt(scriptCode,AmxHeader.PUBLIC_TABLE_OFFSET + (i * 8));
+            int nameAddress = ByteUtils.readInt(scriptCode,AmxHeader.PUBLIC_TABLE_OFFSET + 4 + (i * 8));
+
+            recordEntries.add(new PublicTableEntry(i, address, ByteUtils.readAnsiString(scriptCode, nameAddress)));
+        }
+
+        return Collections.unmodifiableSet(recordEntries);
+    }
+
+    public Set<NativeTableEntry> getNatives() {
+        Set<NativeTableEntry> recordEntries = new HashSet<>();
+
+        int nativeCount = getNativeCount();
+
+        for(int i = getPublicCount(); i < nativeCount + getPublicCount(); i++) { //TODO: seems to work, but is definitely not the intended way
+            int nameAddress = ByteUtils.readInt(scriptCode,AmxHeader.NATIVE_TABLE_OFFSET + (i * 8));
+
+            recordEntries.add(new NativeTableEntry(i - getPublicCount(), ByteUtils.readAnsiString(scriptCode, nameAddress)));
+        }
+
+        return Collections.unmodifiableSet(recordEntries);
     }
 }
