@@ -57,6 +57,10 @@ public class Script {
             return AmxError.AMX_ERR_FORMAT;
         }
 
+        if(getAmxHeader().getFileVersion() != 8) {
+            return AmxError.AMX_ERR_VERSION;
+        }
+
         return AmxError.AMX_ERR_NONE;
     }
 }
