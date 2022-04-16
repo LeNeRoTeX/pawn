@@ -3,13 +3,13 @@ package sh.insane.pawn;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
+import sh.insane.pawn.builtin.callback.PrintNative;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 @Log4j2
 public class AmxRuntime {
@@ -24,13 +24,13 @@ public class AmxRuntime {
 
     private int pri;
     private int alt;
-    private int cod;
-    private int dat;
     private int cip;
     private int stp;
     private int stk;
     private int frm;
     private int hea;
+
+    private final Map<String, NativeCallback> registeredNatives = new HashMap<>();
 
     @SneakyThrows
     public AmxRuntime(String path) {
@@ -56,6 +56,23 @@ public class AmxRuntime {
         for(NativeTableEntry entry : getNativeTable()) {
             log.info(entry);
         }
+
+        registerNative("print", new PrintNative());
+    }
+
+    private void registerNative(String nativeName, NativeCallback nativeCallback) {
+        Objects.requireNonNull(nativeName);
+        Objects.requireNonNull(nativeCallback);
+
+        if(registeredNatives.containsKey(nativeName)) {
+            throw new AmxRuntimeException(String.format("native with name '%s' is already registered", nativeName));
+        }
+
+        registeredNatives.put(nativeName, nativeCallback);
+    }
+
+    private NativeCallback getNativeCallback(String nativeName) {
+        return registeredNatives.get(nativeName);
     }
 
     public byte getBit(byte input, int position)
@@ -82,7 +99,7 @@ public class AmxRuntime {
 
         frm = stk;
 
-        verboseExecute2(cip);
+        //verboseExecute2(cip);
 
         cip = getAmxHeader().getCip();
         exec(cip);
@@ -182,38 +199,40 @@ public class AmxRuntime {
                     stk = stk - CELL_SIZE;
                     writeInt(stk, pri);
 
-
-
-                    log.info("EXEC PUSH_PRI {}", pri);
-
                     advanceToNextInstruction(opCode);
                     break;
                 } case PUSH_C: {
                     stk = stk - CELL_SIZE;
                     writeInt(stk, getOperand(cip));
 
-                    log.info("EXEC PUSH_C {}", getOperand(cip));
-
                     advanceToNextInstruction(opCode);
                     break;
                 } case SYSREQ_C: {
-                    log.info("SYSREQ_C called");
+                    NativeTableEntry nativeTableEntry = getNative(getOperand(cip));
 
-                    int service = getOperand(cip);
+                    if(!registeredNatives.containsKey(nativeTableEntry.getName())) {
+                        throw new AmxRuntimeException(String.format("native with name '%s' not registered", nativeTableEntry.getName()));
+                    }
 
-                    log.info("EXEC SYSREQ_C {}", getOperand(cip));
-
-                    log.info("System service {} {} ({}) called", service, getNative(service).getName(), readInt(stk + 4));
+                    NativeCallback nativeCallback = getNativeCallback(nativeTableEntry.getName());
 
                     int argumentCount = readInt(stk) / CELL_SIZE;
 
-                    List<Integer> callArguments = new ArrayList<>();
+                    List<Integer> callArguments;
 
                     if(argumentCount > 0) {
-                        for(int i = 0; i < argumentCount; i++) {
-                            callArguments.add(readInt(stk + 4 + i * 4));
+                        callArguments = new ArrayList<>();
+
+                        if(argumentCount > 0) {
+                            for(int i = 0; i < argumentCount; i++) {
+                                callArguments.add(readInt(stk + 4 + i * 4));
+                            }
                         }
+                    } else {
+                        callArguments = Collections.emptyList();
                     }
+
+                    pri = nativeCallback.call(new ExecutionContext((x) -> readString(x + amxHeader.getDat())), callArguments);
 
                     advanceToNextInstruction(opCode);
                     break;
@@ -221,20 +240,14 @@ public class AmxRuntime {
                     alt = stk;
                     stk = stk + getOperand(cip);
 
-                    log.info("EXEC STACK {}", getOperand(cip));
-
                     advanceToNextInstruction(opCode);
                     break;
                 } case CONST_PRI: {
                     pri = getOperand(cip);
 
-                    log.info("EXEC CONST_PRI {}", getOperand(cip));
-
                     advanceToNextInstruction(opCode);
                     break;
                 } case RETN: {
-                    log.info("Stack location {}", stk);
-
                     frm = readRef(stk);
                     stk = stk + CELL_SIZE;
                     cip = readRef(stk);
