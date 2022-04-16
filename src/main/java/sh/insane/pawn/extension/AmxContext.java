@@ -1,6 +1,6 @@
 package sh.insane.pawn.extension;
 
-import sh.insane.pawn.NativeCallback;
+import sh.insane.pawn.callback.NativeCallback;
 
 import java.util.Objects;
 

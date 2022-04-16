@@ -25,6 +25,8 @@ public class TestService {
 
         AmxRuntime amxRuntime = new AmxRuntime("timertest.amx");
 
-        amxRuntime.executeMain();
+        //amxRuntime.executeMain();
+
+        amxRuntime.executePublic(1);
     }
 }

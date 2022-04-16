@@ -3,7 +3,8 @@ package sh.insane.pawn;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
-import sh.insane.pawn.builtin.callback.PrintNative;
+import sh.insane.pawn.callback.builtin.*;
+import sh.insane.pawn.callback.NativeCallback;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -57,7 +58,13 @@ public class AmxRuntime {
             log.info(entry);
         }
 
-        registerNative("print", new PrintNative());
+        registerNative("print", new Print());
+        registerNative("SetTimer", new SetTimer());
+        registerNative("SetGameModeText", new SetGameModeText());
+        registerNative("AddPlayerClass", new AddPlayerClass());
+        registerNative("GetTickCount", new GetTickCount());
+        registerNative("format", new Format());
+        registerNative("SendClientMessageToAll", new SendClientMessageToAll());
     }
 
     private void registerNative(String nativeName, NativeCallback nativeCallback) {
@@ -84,6 +91,31 @@ public class AmxRuntime {
         return getBit(value, 8) == 1;
     }
 
+    public void executePublic(int publicId) {
+        PublicTableEntry publicTableEntry = getPublicTable().stream().filter(p -> p.getId() == publicId).findFirst().get();
+
+        hea = getAmxHeader().getHea();
+        stp = getAmxHeader().getStp();
+        cip = getAmxHeader().getCip();
+
+        stk = stp;
+
+        stk -= 8;
+
+        frm = stk;
+
+        //verboseExecute2(cip);
+
+        cip = publicTableEntry.getAddress();
+
+        log.info("STP: " + stp);
+        log.info("STK: " + stk);
+
+        exec(cip);
+
+        log.info("STK2: " + stk);
+    }
+
     public void executeMain() {
         if(!getAmxHeader().hasMainFunction()) {
             return;
@@ -102,7 +134,13 @@ public class AmxRuntime {
         //verboseExecute2(cip);
 
         cip = getAmxHeader().getCip();
+
+        log.info("STP: " + stp);
+        log.info("STK: " + stk);
+
         exec(cip);
+
+        log.info("STK2: " + stk);
     }
 
     private void verboseExecute(int fromCip) {
@@ -178,7 +216,7 @@ public class AmxRuntime {
 */
             switch(opCode) {
                 case PROC: {
-                    writeRef(stk, frm);
+                    writeInt(stk, frm);
                     stk = stk - CELL_SIZE;
                     frm = stk;
 
@@ -232,7 +270,7 @@ public class AmxRuntime {
                         callArguments = Collections.emptyList();
                     }
 
-                    pri = nativeCallback.call(new ExecutionContext((x) -> readString(x + amxHeader.getDat())), callArguments);
+                    pri = nativeCallback.call(new ExecutionContext((x, value) -> writeInt(x, value), (x) -> readString(x), (x) -> readInt(x) , amxHeader), callArguments);
 
                     advanceToNextInstruction(opCode);
                     break;
@@ -248,15 +286,45 @@ public class AmxRuntime {
                     advanceToNextInstruction(opCode);
                     break;
                 } case RETN: {
-                    frm = readRef(stk);
+                    frm = readInt(stk);
                     stk = stk + CELL_SIZE;
-                    cip = readRef(stk);
+                    cip = readInt(stk);
                     stk = stk + CELL_SIZE;
-                    stk = stk + readRef(stk) + CELL_SIZE;
+                    stk = stk + readInt(stk) + CELL_SIZE;
 
-                    log.info("RETN called");
+                    log.info("RETN called"); //TODO Stack hat 4 zu viel aufgeräumt, ursprung unbekannt
                     return;
                     //advanceToNextInstruction(opCode);
+                } case ADDR_ALT: {
+                    alt = frm + getOperand(cip);
+                    advanceToNextInstruction(opCode);
+                    break;
+                } case FILL: {
+                    for(int i = 0; i < getOperand(cip)/4; i++) {
+                        writeInt(amxHeader.getDat() + readInt(alt) + i, readInt(pri));
+                    }
+
+                    advanceToNextInstruction(opCode);
+                    break;
+                } case HEAP: {
+                    alt = hea;
+                    hea = hea + getOperand(cip);
+                    advanceToNextInstruction(opCode);
+                    break;
+                } case STOR_I: {
+                    alt = pri;
+                    advanceToNextInstruction(opCode);
+                    break;
+                } case MOV_PRI: {
+                    pri = alt;
+
+                    advanceToNextInstruction(opCode);
+                    break;
+                } case ADDR_PRI: {
+                    pri = frm + getOperand(cip);
+
+                    advanceToNextInstruction(opCode);
+                    break;
                 }
             }
         }
@@ -296,7 +364,7 @@ public class AmxRuntime {
 
     private void advanceToNextInstruction(OpCode current) {
         int bytesToMove = current.operandSize;
-        bytesToMove += 4;
+        bytesToMove += CELL_SIZE;
         cip += bytesToMove;
     }
 
@@ -458,7 +526,7 @@ public class AmxRuntime {
 
         int nativeCount = getNativeCount();
 
-        for(int i = getPublicCount(); i < nativeCount; i++) { //TODO: seems to work, but is definitely not the intended way
+        for(int i = getPublicCount(); i < nativeCount + getPublicCount(); i++) { //TODO: seems to work, but is definitely not the intended way
             int nameAddress = readInt(NATIVE_TABLE_OFFSET + (i * 8));
 
             recordEntries.add(new NativeTableEntry(i - getPublicCount(), readAnsiString(nameAddress)));
@@ -510,6 +578,10 @@ public class AmxRuntime {
     public String readString(int offset) {
         String result = "";
 
+        if(offset < amxHeader.getDat()) {
+            offset += amxHeader.getDat();
+        }
+
         while(true) {
             if(offset < 0 || offset >= fileContent.length) {
                 break;
@@ -518,7 +590,7 @@ public class AmxRuntime {
             byte b = readByte(offset);
 
             if(b != 0) {
-                offset += 4;
+                offset += CELL_SIZE;
 
                 result = result + (char)b;
             } else {
