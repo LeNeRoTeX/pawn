@@ -14,8 +14,6 @@ public class Script {
         this.fileLocation = fileLocation;
         loadTime = LocalDateTime.now();
         amxHeader = readAmxHeader(scriptCode);
-
-        log.info(amxHeader);
     }
 
     public String getFileLocation() {
