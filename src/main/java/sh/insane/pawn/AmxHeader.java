@@ -1,4 +1,4 @@
-package sh.insane.pawn.ad;
+package sh.insane.pawn;
 
 import lombok.Builder;
 import lombok.Getter;

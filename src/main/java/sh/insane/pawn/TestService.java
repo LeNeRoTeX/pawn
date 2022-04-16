@@ -1,7 +1,6 @@
 package sh.insane.pawn;
 
 import org.springframework.stereotype.Service;
-import sh.insane.pawn.ad.AmxRuntime;
 
 import javax.annotation.PostConstruct;
 
