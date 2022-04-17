@@ -52,7 +52,7 @@ public class Print implements NativeCallback {
 ```
 
 ## Current working example
-The file has to be compiled in 32-bit Pawn mode an use the command line:
+The file has to be compiled in 32-bit Pawn mode and use the command line:
 `-C- -O0 -d0`
 
 ```
