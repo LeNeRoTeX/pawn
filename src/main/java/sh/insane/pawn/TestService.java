@@ -11,6 +11,8 @@ public class TestService {
     public void postConstruct() throws Exception {
         Amx amx = new Amx();
         Script timertest = amx.loadFromFile("/Users/lukas/Desktop/timertest.amx");
-        timertest.executePublic("OnGameModeInit");
+        int result = timertest.executePublic("OnGameModeInit");
+
+        System.out.println("Result : " + result);
     }
 }
