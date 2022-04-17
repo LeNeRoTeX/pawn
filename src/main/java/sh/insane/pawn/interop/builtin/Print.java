@@ -14,8 +14,4 @@ public class Print implements NativeCallback {
         log.info("{}", executionContext.readString(callArguments.get(0)));
         return 0;
     }
-
-    public int test(int x, int y, int z) {
-        return 0;
-    }
 }
