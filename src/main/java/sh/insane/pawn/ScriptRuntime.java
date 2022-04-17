@@ -70,6 +70,14 @@ public class ScriptRuntime {
         return ByteUtils.readInt(scriptBytes,amxHeader.getCod() + instructionCip + 4);
     }
 
+    public void executePublic(String publicName) {
+        for(PublicTableEntry publicTableEntry : getPublics()) {
+            if(publicTableEntry.getName().equals(publicName)) {
+                execute(publicTableEntry.getAddress());
+                return;
+            }
+        }
+    }
 
     public void execute(int address) {
         resetRegisters();

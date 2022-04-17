@@ -88,6 +88,10 @@ public class Script {
         execute(getAmxHeader().getCip());
     }
 
+    public void executePublic(String publicName) {
+        scriptRuntime.executePublic(publicName);
+    }
+
     private void execute(int address) {
         scriptRuntime.execute(address);
     }

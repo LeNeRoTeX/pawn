@@ -34,7 +34,7 @@ public class Amx {
         }
     }
 
-    public AmxError loadFromFile(String filePath) {
+    public Script loadFromFile(String filePath) {
         try {
             byte[] fileContent = Files.readAllBytes(Paths.get(filePath));
             Script script = new Script(filePath, fileContent, amxContext);
@@ -43,16 +43,15 @@ public class Amx {
 
             if(!validationError.equals(AmxError.AMX_ERR_NONE)) {
                 log.error("[{}] Run time error {}: \"{}\"", script.getFileLocation(), validationError.getId(), validationError.getReason());
-                return validationError;
+                return script;
             }
 
-            script.executeMain();
             scripts.add(script);
+            script.executeMain();
+            return script;
         } catch (IOException e) {
             log.error("could not load script from file {}", e.getMessage());
-            return AmxError.AMX_ERR_FILE;
+            return null;
         }
-
-        return AmxError.AMX_ERR_NONE;
     }
 }

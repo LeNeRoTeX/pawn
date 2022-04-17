@@ -13,11 +13,11 @@ Current working example is below.
 
 ```
 Amx amx = new Amx();  
-amx.loadFromFile("Desktop/timertest.amx");
+Script timertest = amx.loadFromFile("Desktop/timertest.amx");
+timertest.executePublic("OnGameModeInit");
 ```
 
 The main function of the given script is executed when the script is loaded.
-Calling public functions will be a feature for the future.
 ## Developing plugins
 `native print(text[]);`
 ```
