@@ -4,7 +4,7 @@ Pawn for Java is a hobby test project if it is possible to implement the Pawn AM
 
 ## Pawn Version
 
-The target version of pawn is **3.2**. The same SA:MP uses.
+The target version of pawn is the same that **SA:MP** uses.
 
 Not all instructions are implemented yet.
 Current working example is below.
