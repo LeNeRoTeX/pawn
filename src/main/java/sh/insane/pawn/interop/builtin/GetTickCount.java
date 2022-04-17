@@ -1,7 +1,7 @@
-package sh.insane.pawn.callback.builtin;
+package sh.insane.pawn.interop.builtin;
 
 import sh.insane.pawn.ExecutionContext;
-import sh.insane.pawn.callback.NativeCallback;
+import sh.insane.pawn.interop.NativeCallback;
 
 import java.util.List;
 

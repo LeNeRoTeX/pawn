@@ -34,4 +34,5 @@ public class AmxHeader {
     public boolean hasMainFunction() {
         return cip != -1;
     }
+
 }

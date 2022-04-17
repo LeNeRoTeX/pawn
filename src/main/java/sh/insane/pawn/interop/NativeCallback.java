@@ -1,4 +1,4 @@
-package sh.insane.pawn.callback;
+package sh.insane.pawn.interop;
 
 import sh.insane.pawn.ExecutionContext;
 

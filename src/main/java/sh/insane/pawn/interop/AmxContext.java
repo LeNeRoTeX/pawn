@@ -1,8 +1,7 @@
-package sh.insane.pawn.extension;
+package sh.insane.pawn.interop;
 
 import lombok.extern.log4j.Log4j2;
 import sh.insane.pawn.AmxRuntimeException;
-import sh.insane.pawn.callback.NativeCallback;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -37,4 +36,5 @@ public class AmxContext {
     public Map<String, NativeCallback> getNatives() {
         return Collections.unmodifiableMap(natives);
     }
+
 }
