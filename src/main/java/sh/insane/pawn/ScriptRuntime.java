@@ -7,9 +7,7 @@ import sh.insane.pawn.code.OpCode;
 import sh.insane.pawn.code.PublicTableEntry;
 import sh.insane.pawn.interop.AmxContext;
 import sh.insane.pawn.interop.NativeCallback;
-import sh.insane.pawn.interop.NativeMethod;
 
-import java.lang.reflect.Method;
 import java.util.*;
 
 @Log4j2

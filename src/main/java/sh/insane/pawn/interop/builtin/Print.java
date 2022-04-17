@@ -3,7 +3,6 @@ package sh.insane.pawn.interop.builtin;
 import lombok.extern.log4j.Log4j2;
 import sh.insane.pawn.ExecutionContext;
 import sh.insane.pawn.interop.NativeCallback;
-import sh.insane.pawn.interop.NativeMethod;
 
 import java.util.List;
 
@@ -16,7 +15,6 @@ public class Print implements NativeCallback {
         return 0;
     }
 
-    @NativeMethod
     public int test(int x, int y, int z) {
         return 0;
     }
