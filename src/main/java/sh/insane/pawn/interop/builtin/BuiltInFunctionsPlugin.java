@@ -8,6 +8,8 @@ public class BuiltInFunctionsPlugin implements Plugin {
     /*
     bool:IsPublicDefined(name[])
     CallLocalPublic(name[], argumentFormat[], args...)
+
+    uuid(&target[]);
      */
 
     @Override
@@ -17,7 +19,7 @@ public class BuiltInFunctionsPlugin implements Plugin {
         amxContext.addNative("GetTime", new GetTime());
         amxContext.addNative("GetDate", new GetDate());
         amxContext.addNative("strlen", new Strlen());
-        //amxContext.addNative("print", new Print());
-        //amxContext.addNative("format", new Format());
+        amxContext.addNative("print", new Print());
+        amxContext.addNative("format", new Format());
     }
 }

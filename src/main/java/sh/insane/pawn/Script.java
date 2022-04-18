@@ -77,6 +77,8 @@ public class Script {
             return AmxError.AMX_ERR_VERSION;
         }
 
+        /* TODO verbose walk opcodes and report invalid instructions, natives */
+
         return AmxError.AMX_ERR_NONE;
     }
 

@@ -1,7 +1,7 @@
 package sh.insane.pawn;
 
 import lombok.extern.log4j.Log4j2;
-import sh.insane.pawn.interop.builtin.BuiltInRuntimePlugin;
+import sh.insane.pawn.interop.builtin.BuiltInFunctionsPlugin;
 import sh.insane.pawn.interop.AmxContext;
 import sh.insane.pawn.interop.Plugin;
 
@@ -22,7 +22,7 @@ public class Amx {
         plugins = new ArrayList<>();
         scripts = new ArrayList<>();
 
-        loadPlugin(new BuiltInRuntimePlugin());
+        loadPlugin(new BuiltInFunctionsPlugin());
     }
 
     public void loadPlugin(Plugin plugin) {

@@ -95,6 +95,16 @@ public class ScriptRuntime {
             }
 
             switch(opCode) {
+                case LOAD_PRI: {
+                    pri = ByteUtils.readInt(scriptBytes, getAmxHeader().getDat() + getOperand(cip));
+                    advanceToNextInstruction(opCode);
+                    break;
+                }
+                case LOAD_ALT: {
+                    alt = ByteUtils.readInt(scriptBytes, getAmxHeader().getDat() + getOperand(cip));
+                    advanceToNextInstruction(opCode);
+                    break;
+                }
                 case PROC: {
                     ByteUtils.writeInt(scriptBytes, stk, frm);
                     stk = stk - 4;
@@ -193,7 +203,7 @@ public class ScriptRuntime {
                     advanceToNextInstruction(opCode);
                     break;
                 } case STOR_I: {
-                    alt = pri;
+                    ByteUtils.writeInt(scriptBytes, alt, pri);
                     advanceToNextInstruction(opCode);
                     break;
                 } case MOV_PRI: {
@@ -209,6 +219,39 @@ public class ScriptRuntime {
                 } case STOR_S_PRI: {
                     ByteUtils.writeInt(scriptBytes, frm + getOperand(cip), pri);
 
+                    advanceToNextInstruction(opCode);
+                    break;
+                } case LOAD_S_PRI: {
+                    pri = ByteUtils.readInt(scriptBytes, frm + getOperand(cip));
+                    advanceToNextInstruction(opCode);
+                    break;
+                } case LOAD_S_ALT: {
+                    alt = ByteUtils.readInt(scriptBytes, frm + getOperand(cip));
+                    advanceToNextInstruction(opCode);
+                    break;
+                } case INC_S: {
+                    ByteUtils.writeInt(scriptBytes, ByteUtils.readInt(scriptBytes, frm + getOperand(cip)), ByteUtils.readInt(scriptBytes, frm + getOperand(cip)) + 1);
+                    advanceToNextInstruction(opCode);
+                    break;
+                } case CONST_ALT: {
+                    alt = getOperand(cip);
+                    advanceToNextInstruction(opCode);
+                    break;
+                } case ADD: {
+                    pri = pri + alt;
+                    advanceToNextInstruction(opCode);
+                    break;
+                } case POP_ALT: {
+                    stk = stk + 4;
+                    alt = ByteUtils.readInt(scriptBytes, stk);
+                    advanceToNextInstruction(opCode);
+                    break;
+                } case SUB_ALT: {
+                    pri = alt - pri;
+                    advanceToNextInstruction(opCode);
+                    break;
+                } case DEC_S: {
+                    ByteUtils.writeInt(scriptBytes, ByteUtils.readInt(scriptBytes, frm + getOperand(cip)), ByteUtils.readInt(scriptBytes, frm + getOperand(cip)) - 1);
                     advanceToNextInstruction(opCode);
                     break;
                 }

@@ -1,7 +1,7 @@
-#if defined _core_included
+#if defined _pawn4j_included
 	#endinput
 #endif
-#define _core_included
+#define _pawn4j_included
 
 #pragma tabsize 4
 
