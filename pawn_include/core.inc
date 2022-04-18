@@ -5,6 +5,7 @@
 
 #pragma tabsize 4
 
+native strlen(const string[]);
 native print(const string[]);
 
 native format(output[], len, const format[], {Float,_}:...); /* returns 1 if the length of the result string exceeded "len" and got truncated */
