@@ -19,11 +19,14 @@ timertest.executePublic("OnGameModeInit");
 
 The main function of the given script is executed when the script is loaded.
 
-The default `BuiltInRuntimeFunctionsPlugin` with its natives from `pawn4j.inc`is implicit registered.
+The default `BuiltInFunctionsPlugin` with its natives from `pawn4j.inc` is implicit registered to the AMX instance.
 
 ## How to script
 The file has to be compiled in 32-bit Pawn mode and use the command line:
 `-C- -O0 -d0`
+
+## Working example
+``/pawn_example/example.pwn``
 
 ## Developing plugins
 You can register any plugin with `amx.loadPlugin(Plugin plugin)`.
