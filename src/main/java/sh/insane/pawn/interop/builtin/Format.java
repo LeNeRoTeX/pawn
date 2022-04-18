@@ -4,11 +4,9 @@ import lombok.extern.log4j.Log4j2;
 import sh.insane.pawn.ExecutionContext;
 import sh.insane.pawn.interop.NativeCallback;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Log4j2
 public class Format implements NativeCallback {
@@ -84,8 +82,11 @@ public class Format implements NativeCallback {
             count--;
         }
 
+        int truncated = 0;
+
         if(formatted.length() > size - 1) {
             formatted = formatted.substring(0, size - 1);
+            truncated = 1;
         }
 
         for(int i = 0; i < size; i++) {
@@ -99,6 +100,6 @@ public class Format implements NativeCallback {
         }
 
         executionContext.writeInt(targetAddress + 4 * size, 0);
-        return 0;
+        return truncated;
     }
 }
