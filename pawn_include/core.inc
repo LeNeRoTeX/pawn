@@ -11,3 +11,6 @@ native format(output[], len, const format[], {Float,_}:...); /* returns 1 if the
 
 native timestamp(); /* returns 32-bit unix timestamp */
 native GetTime(&hour, &minute, &second);
+native GetDate(&day, &month, &year);
+
+native random(max); /* returns an integer in range between 0 to max-1*/

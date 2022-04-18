@@ -18,6 +18,7 @@ public class BuiltInFunctionsPlugin implements Plugin {
         amxContext.addNative("random", new Random());
         amxContext.addNative("timestamp", new Timestamp());
         amxContext.addNative("GetTime", new GetTime());
+        amxContext.addNative("GetDate", new GetDate());
         //amxContext.addNative("print", new Print());
         //amxContext.addNative("format", new Format());
     }
