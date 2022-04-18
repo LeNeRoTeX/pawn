@@ -6,5 +6,8 @@
 #pragma tabsize 4
 
 native print(const string[]);
+
 native format(output[], len, const format[], {Float,_}:...); /* return 1 if the length of the result string exceeded "len" and got truncated */
+
+native timestamp(); /* returns 32-bit unix timestamp */
 native GetTime(&hour, &minute, &second);
