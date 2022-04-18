@@ -129,6 +129,10 @@ public class ScriptRuntime {
                     NativeTableEntry nativeTableEntry = getNative(getOperand(cip));
                     NativeCallback nativeCallback = amxContext.getNatives().get(nativeTableEntry.getName());
 
+                    if(nativeCallback == null) {
+                        log.error("could not find registered native {}", nativeTableEntry.getName());
+                    }
+
                     int argumentCount = ByteUtils.readInt(scriptBytes, stk) / 4;
 
                     List<Integer> callArguments;
@@ -176,7 +180,9 @@ public class ScriptRuntime {
                     break;
                 } case FILL: {
                     for(int i = 0; i < getOperand(cip)/4; i++) {
-                        ByteUtils.writeInt(scriptBytes,amxHeader.getDat() + ByteUtils.readInt(scriptBytes, alt) + i, ByteUtils.readInt(scriptBytes, pri));
+                        ByteUtils.writeInt(scriptBytes,
+                                amxHeader.getDat() + ByteUtils.readInt(scriptBytes, alt) + 4,
+                                ByteUtils.readInt(scriptBytes, pri));
                     }
 
                     advanceToNextInstruction(opCode);
@@ -197,6 +203,11 @@ public class ScriptRuntime {
                     break;
                 } case ADDR_PRI: {
                     pri = frm + getOperand(cip);
+
+                    advanceToNextInstruction(opCode);
+                    break;
+                } case STOR_S_PRI: {
+                    ByteUtils.writeInt(scriptBytes, frm + getOperand(cip), pri);
 
                     advanceToNextInstruction(opCode);
                     break;

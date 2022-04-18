@@ -4,6 +4,7 @@ public enum OpCode {
     CONST_PRI(11, 4),
     ADDR_PRI(13, 4),
     ADDR_ALT(14, 4),
+    STOR_S_PRI(17, 4),
     STOR_I(23),
     MOV_PRI(33),
     PUSH_PRI(36),
