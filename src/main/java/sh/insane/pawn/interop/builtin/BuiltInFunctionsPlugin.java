@@ -5,13 +5,6 @@ import sh.insane.pawn.interop.Plugin;
 
 public class BuiltInFunctionsPlugin implements Plugin {
 
-    /*
-    bool:IsPublicDefined(name[])
-    CallLocalPublic(name[], argumentFormat[], args...)
-
-    uuid(&target[]);
-     */
-
     @Override
     public void onPluginLoad(AmxContext amxContext) {
         amxContext.addNative("random", new Random());
