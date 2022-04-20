@@ -8,6 +8,9 @@ import sh.insane.pawn.code.PublicTableEntry;
 import sh.insane.pawn.interop.AmxContext;
 import sh.insane.pawn.interop.NativeCallback;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.IntBuffer;
 import java.util.*;
 
 @Log4j2
@@ -105,7 +108,108 @@ public class ScriptRuntime {
                     advanceToNextInstruction(opCode);
                     break;
                 }
-                case PROC: {
+                case LOAD_S_PRI: {
+                    pri = ByteUtils.readInt(scriptBytes, frm + getOperand(cip));
+                    advanceToNextInstruction(opCode);
+                    break;
+                } case LOAD_S_ALT: {
+                    alt = ByteUtils.readInt(scriptBytes, frm + getOperand(cip));
+                    advanceToNextInstruction(opCode);
+                    break;
+                } case LREF_PRI: {
+                    pri = ByteUtils.readInt(scriptBytes, ByteUtils.readInt(scriptBytes, getAmxHeader().getDat() + getOperand(cip)));
+                    advanceToNextInstruction(opCode);
+                    break;
+                }
+                case LREF_ALT: {
+                    alt = ByteUtils.readInt(scriptBytes, ByteUtils.readInt(scriptBytes, getAmxHeader().getDat() + getOperand(cip)));
+                    advanceToNextInstruction(opCode);
+                    break;
+                } case LREF_S_PRI: {
+                    pri = ByteUtils.readInt(scriptBytes, ByteUtils.readInt(scriptBytes, frm + getOperand(cip)));
+                    advanceToNextInstruction(opCode);
+                    break;
+                } case LREF_S_ALT: {
+                    alt = ByteUtils.readInt(scriptBytes, ByteUtils.readInt(scriptBytes, frm + getOperand(cip)));
+                    advanceToNextInstruction(opCode);
+                    break;
+                } case LOAD_I: {
+                    pri = ByteUtils.readInt(scriptBytes, pri);
+                    advanceToNextInstruction(opCode);
+                    break;
+                } case LODB_I: {
+                    int byteCount = getOperand(cip);
+
+                    byte[] res = new byte[byteCount];
+
+                    for(int i = 0; i < byteCount; i++) {
+                        res[i] = ByteUtils.readByte(scriptBytes, pri + i);
+                    }
+
+                    pri = ByteBuffer.wrap(res).order(ByteOrder.LITTLE_ENDIAN).asIntBuffer().get();
+
+                    advanceToNextInstruction(opCode);
+                    break;
+                } case CONST_PRI: {
+                    pri = getOperand(cip);
+
+                    advanceToNextInstruction(opCode);
+                    break;
+                } case CONST_ALT: {
+                    alt = getOperand(cip);
+                    advanceToNextInstruction(opCode);
+                    break;
+                } case ADDR_PRI: {
+                    pri = frm + getOperand(cip);
+
+                    advanceToNextInstruction(opCode);
+                    break;
+                } case ADDR_ALT: {
+                    alt = frm + getOperand(cip);
+
+                    advanceToNextInstruction(opCode);
+                    break;
+                } case STOR_PRI: {
+                    ByteUtils.writeInt(scriptBytes, getAmxHeader().getDat() + getOperand(cip), pri);
+                    advanceToNextInstruction(opCode);
+                    break;
+                } case STOR_ALT: {
+                    ByteUtils.writeInt(scriptBytes, getAmxHeader().getDat() + getOperand(cip), alt);
+                    advanceToNextInstruction(opCode);
+                    break;
+                } case STOR_S_PRI: {
+                    ByteUtils.writeInt(scriptBytes, frm + getOperand(cip), pri);
+
+                    advanceToNextInstruction(opCode);
+                    break;
+                } case STOR_S_ALT: {
+                    ByteUtils.writeInt(scriptBytes, frm + getOperand(cip), alt);
+
+                    advanceToNextInstruction(opCode);
+                    break;
+                } case SREF_PRI: {
+                    ByteUtils.writeInt(scriptBytes, ByteUtils.readInt(scriptBytes, ByteUtils.readInt(scriptBytes, getAmxHeader().getDat() + getOperand(cip))), pri);
+                    advanceToNextInstruction(opCode);
+                    break;
+                } case SREF_ALT: {
+                    ByteUtils.writeInt(scriptBytes, ByteUtils.readInt(scriptBytes, ByteUtils.readInt(scriptBytes, getAmxHeader().getDat() + getOperand(cip))), alt);
+                    advanceToNextInstruction(opCode);
+                    break;
+                } case SREF_S_PRI: {
+                    ByteUtils.writeInt(scriptBytes, ByteUtils.readInt(scriptBytes, ByteUtils.readInt(scriptBytes, frm + getOperand(cip))), pri);
+
+                    advanceToNextInstruction(opCode);
+                    break;
+                } case SREF_S_ALT: {
+                    ByteUtils.writeInt(scriptBytes, ByteUtils.readInt(scriptBytes, ByteUtils.readInt(scriptBytes, frm + getOperand(cip))), alt);
+
+                    advanceToNextInstruction(opCode);
+                    break;
+                } case STOR_I: {
+                    ByteUtils.writeInt(scriptBytes, alt, pri);
+                    advanceToNextInstruction(opCode);
+                    break;
+                } case PROC: {
                     ByteUtils.writeInt(scriptBytes, stk, frm);
                     stk = stk - 4;
                     frm = stk;
@@ -169,24 +273,12 @@ public class ScriptRuntime {
 
                     advanceToNextInstruction(opCode);
                     break;
-                } case CONST_PRI: {
-                    pri = getOperand(cip);
-
-                    advanceToNextInstruction(opCode);
-                    break;
                 } case RETN: {
                     frm = ByteUtils.readInt(scriptBytes, stk);
                     stk = stk + 4;
                     cip = ByteUtils.readInt(scriptBytes, stk);
                     stk = stk + 4;
                     stk = stk + ByteUtils.readInt(scriptBytes, stk) + 4;
-
-                    log.info("RETN called"); //TODO Stack hat 4 zu viel aufgeräumt, ursprung unbekannt
-                    return;
-                    //advanceToNextInstruction(opCode);
-                } case ADDR_ALT: {
-                    alt = frm + getOperand(cip);
-                    advanceToNextInstruction(opCode);
                     break;
                 } case FILL: {
                     for(int i = 0; i < getOperand(cip)/4; i++) {
@@ -202,39 +294,13 @@ public class ScriptRuntime {
                     hea = hea + getOperand(cip);
                     advanceToNextInstruction(opCode);
                     break;
-                } case STOR_I: {
-                    ByteUtils.writeInt(scriptBytes, alt, pri);
-                    advanceToNextInstruction(opCode);
-                    break;
                 } case MOV_PRI: {
                     pri = alt;
 
                     advanceToNextInstruction(opCode);
                     break;
-                } case ADDR_PRI: {
-                    pri = frm + getOperand(cip);
-
-                    advanceToNextInstruction(opCode);
-                    break;
-                } case STOR_S_PRI: {
-                    ByteUtils.writeInt(scriptBytes, frm + getOperand(cip), pri);
-
-                    advanceToNextInstruction(opCode);
-                    break;
-                } case LOAD_S_PRI: {
-                    pri = ByteUtils.readInt(scriptBytes, frm + getOperand(cip));
-                    advanceToNextInstruction(opCode);
-                    break;
-                } case LOAD_S_ALT: {
-                    alt = ByteUtils.readInt(scriptBytes, frm + getOperand(cip));
-                    advanceToNextInstruction(opCode);
-                    break;
                 } case INC_S: {
                     ByteUtils.writeInt(scriptBytes, ByteUtils.readInt(scriptBytes, frm + getOperand(cip)), ByteUtils.readInt(scriptBytes, frm + getOperand(cip)) + 1);
-                    advanceToNextInstruction(opCode);
-                    break;
-                } case CONST_ALT: {
-                    alt = getOperand(cip);
                     advanceToNextInstruction(opCode);
                     break;
                 } case ADD: {
@@ -254,6 +320,9 @@ public class ScriptRuntime {
                     ByteUtils.writeInt(scriptBytes, ByteUtils.readInt(scriptBytes, frm + getOperand(cip)), ByteUtils.readInt(scriptBytes, frm + getOperand(cip)) - 1);
                     advanceToNextInstruction(opCode);
                     break;
+                } default: {
+                    log.fatal("instruction {} is not implemented", opCode);
+                    return;
                 }
             }
         }
